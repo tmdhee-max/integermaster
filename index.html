@@ -296,28 +296,24 @@
 
     <!-- Firebase CDN & Global Architecture Setup -->
     <script type="module">
-  // Import the functions you need from the SDKs you need
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
-  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-analytics.js";
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-analytics.js";
 
-  // Your web app's Firebase configuration
-  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-  const firebaseConfig = {
-    apiKey: "AIzaSyCUKNBIo6WfZnEiL3D4zAKl4pdGgCCHKjA",
+
+        // Firebase 및 글로벌 환경 변수 초기화
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+          apiKey: "AIzaSyCUKNBIo6WfZnEiL3D4zAKl4pdGgCCHKjA",
     authDomain: "shmath1.firebaseapp.com",
     projectId: "shmath1",
     storageBucket: "shmath1.firebasestorage.app",
     messagingSenderId: "514115223197",
     appId: "1:514115223197:web:2e2376e11155bb4898de74",
     measurementId: "G-2XH0KWN4T2"
-  };
 
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
+        };
+
+         const app = initializeApp(firebaseConfig);
   const analytics = getAnalytics(app);
-</script>
 
         // 상태 관리
         let user = null;
