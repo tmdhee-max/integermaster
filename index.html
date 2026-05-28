@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>정수 마스터! 🧸</title>
+    <!-- Tailwind CSS & FontAwesome Icons -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Confetti JS for Celebration Effects -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nanum+Pen+Script&family=Gowun+Dodum&display=swap');
+        
+        body {
+            font-family: 'Gowun Dodum', sans-serif;
+            background: linear-gradient(135deg, #fef08a 0%, #fed7aa 25%, #fbcfe8 50%, #bfdbfe 100%);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 4px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+        }
+
+        .bounce-hover:hover {
+            transform: translateY(-4px) scale(1.02);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .shake-animation {
+            animation: shake 0.5s ease-in-out;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-6px); }
+            20%, 40%, 60%, 80% { transform: translateX(6px); }
+        }
+
+        /* 폰트 및 커스텀 이펙트 */
+        .fancy-font {
+            font-family: 'Fredoka One', 'Gowun Dodum', sans-serif;
+        }
+
+        /* 스크롤바 디자인 숨김 */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-3 sm:p-6 overflow-x-hidden">
+
+    <div id="game-card" class="w-full max-w-md glass-panel rounded-3xl p-5 sm:p-8 relative transition-all duration-300">
+        
+        <!-- ================= START SCREEN ================= -->
+        <div id="start-screen" class="space-y-6">
+            <div class="text-center space-y-2">
+                <div class="inline-block bg-pink-100 text-pink-500 font-extrabold px-4 py-1.5 rounded-full text-xs tracking-wider uppercase mb-1">
+                    🎯 FUN MATH ADVENTURE
+                </div>
+                <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 fancy-font flex items-center justify-center gap-2">
+                    🧸 정수 마스터!
+                </h1>
+                <p class="text-slate-500 text-sm">정수의 사칙연산을 빠르고 정확하게 정복해보세요!</p>
+            </div>
+
+            <!-- Settings Form -->
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1.5 pl-1"><i class="fa-solid fa-signature mr-1"></i> 플레이어 닉네임</label>
+                    <input id="nickname" type="text" placeholder="귀여운 닉네임을 입력해봐요! ✨" maxlength="12"
+                           class="w-full px-5 py-3.5 rounded-2xl border-2 border-slate-100 bg-white/70 focus:bg-white focus:outline-none focus:border-pink-300 text-center font-bold text-slate-700 transition-all text-base placeholder:text-slate-400 placeholder:font-normal">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1.5 pl-1"><i class="fa-solid fa-gamepad mr-1"></i> 도전 연산 종류 선택</label>
+                    <div class="grid grid-cols-4 gap-2">
+                        <button type="button" onclick="toggleOperator('+')" id="btn-op-add" class="op-select-btn py-2.5 rounded-xl border-2 border-pink-400 bg-pink-100 text-pink-600 font-extrabold text-lg transition-all">+</button>
+                        <button type="button" onclick="toggleOperator('-')" id="btn-op-sub" class="op-select-btn py-2.5 rounded-xl border-2 border-pink-400 bg-pink-100 text-pink-600 font-extrabold text-lg transition-all">-</button>
+                        <button type="button" onclick="toggleOperator('*')" id="btn-op-mul" class="op-select-btn py-2.5 rounded-xl border-2 border-slate-200 bg-white text-slate-500 font-extrabold text-lg transition-all">×</button>
+                        <button type="button" onclick="toggleOperator('/')" id="btn-op-div" class="op-select-btn py-2.5 rounded-xl border-2 border-slate-200 bg-white text-slate-500 font-extrabold text-lg transition-all">÷</button>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1.5 pl-1"><i class="fa-solid fa-gauge-high mr-1"></i> 난이도</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="setDifficulty('easy')" id="diff-easy" class="diff-btn py-2 rounded-xl border-2 border-green-400 bg-green-50 text-green-600 font-bold text-sm transition-all">쉬움 (-10 ~ 10)</button>
+                        <button onclick="setDifficulty('normal')" id="diff-normal" class="diff-btn py-2 rounded-xl border-2 border-slate-200 bg-white text-slate-600 font-bold text-sm transition-all">보통 (-20 ~ 20)</button>
+                        <button onclick="setDifficulty('hard')" id="diff-hard" class="diff-btn py-2 rounded-xl border-2 border-slate-200 bg-white text-slate-600 font-bold text-sm transition-all">매운맛 (-50 ~ 50)</button>
+                    </div>
+                </div>
+
+                <div class="pt-2 grid grid-cols-2 gap-3">
+                    <button onclick="startGame('TimeAttack')" class="bounce-hover bg-gradient-to-r from-sky-400 to-sky-500 text-white font-extrabold py-4 rounded-2xl shadow-md hover:shadow-lg transition-all flex flex-col items-center justify-center gap-0.5">
+                        <span class="text-base"><i class="fa-regular fa-clock mr-1.5"></i>타임어택</span>
+                        <span class="text-xs opacity-90 font-normal">60초 동안 많이 풀기</span>
+                    </button>
+                    <button onclick="startGame('Challenge')" class="bounce-hover bg-gradient-to-r from-pink-400 to-pink-500 text-white font-extrabold py-4 rounded-2xl shadow-md hover:shadow-lg transition-all flex flex-col items-center justify-center gap-0.5">
+                        <span class="text-base"><i class="fa-solid fa-shield-heart mr-1.5"></i>하트 서바이벌</span>
+                        <span class="text-xs opacity-90 font-normal">오답 5회 발생 시 종료</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Hall of Fame / Leaderboard -->
+            <div class="pt-4 border-t-2 border-dashed border-slate-200">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="font-extrabold text-slate-700 text-sm flex items-center gap-1.5">
+                        <i class="fa-solid fa-crown text-amber-400"></i> 명예의 전당 TOP 5
+                    </h3>
+                    <button onclick="loadLeaderboard()" class="text-xs text-slate-400 hover:text-pink-500 transition-colors">
+                        <i class="fa-solid fa-rotate-right"></i> 새로고침
+                    </button>
+                </div>
+                <div id="ranking-list" class="bg-white/40 rounded-2xl p-3 min-h-[140px] text-xs flex flex-col justify-center">
+                    <div class="text-center text-slate-400 py-6">
+                        <i class="fa-solid fa-circle-notch animate-spin text-lg text-pink-400 mb-2"></i>
+                        <p>글로벌 랭킹을 로드하고 있어요...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= QUIZ AREA ================= -->
+        <div id="quiz-area" class="hidden space-y-6">
+            <!-- Header HUD -->
+            <div class="flex items-center justify-between bg-white/60 px-4 py-2.5 rounded-2xl border border-white">
+                <div class="flex items-center gap-1.5">
+                    <span class="text-xs text-slate-500 font-bold">SCORE</span>
+                    <span id="score" class="text-xl font-black text-pink-500 fancy-font">0</span>
+                </div>
+                <div class="text-center">
+                    <div id="combo-badge" class="scale-0 opacity-0 bg-gradient-to-r from-amber-400 to-orange-500 text-white font-black text-xs px-2.5 py-0.5 rounded-full shadow-sm transition-all duration-300">
+                        <span id="combo">0</span> COMBO 🔥
+                    </div>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <div id="timer-box" class="hidden flex items-center gap-1 text-sky-600 font-extrabold text-sm">
+                        <i class="fa-regular fa-clock animate-pulse"></i>
+                        <span id="timer-display">60초</span>
+                    </div>
+                    <div id="hearts" class="hidden text-base tracking-tight select-none">
+                        ❤️❤️❤️❤️❤️
+                    </div>
+                </div>
+            </div>
+
+            <!-- Problem Billboard -->
+            <div class="bg-gradient-to-b from-slate-800 to-slate-900 rounded-3xl p-8 text-center relative overflow-hidden shadow-inner border-t-4 border-slate-700 min-h-[160px] flex flex-col justify-center items-center">
+                <div class="absolute -top-10 -left-10 w-24 h-24 bg-pink-500/10 rounded-full blur-2xl"></div>
+                <div class="absolute -bottom-10 -right-10 w-24 h-24 bg-sky-500/10 rounded-full blur-2xl"></div>
+                
+                <p class="text-pink-300 text-xs font-semibold tracking-widest mb-2 uppercase">SOLVE THIS QUESTION</p>
+                <h2 id="q" class="text-3xl sm:text-4xl font-black text-white tracking-wide fancy-font drop-shadow-md leading-relaxed">
+                    (-5) + (+2) = ?
+                </h2>
+            </div>
+
+            <!-- Answer Input & Control -->
+            <div class="space-y-4">
+                <div class="relative">
+                    <input id="ans" type="text" readonly
+                           class="w-full py-4 px-6 rounded-2xl border-4 border-sky-100 bg-white focus:outline-none focus:border-sky-300 text-center font-black text-3xl text-slate-700 transition-all shadow-sm"
+                           placeholder="정답 입력">
+                    <button onclick="clearAnswer()" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500 p-2 transition-colors">
+                        <i class="fa-solid fa-circle-xmark text-xl"></i>
+                    </button>
+                </div>
+                
+                <!-- On-Screen Custom Grid Keypad (Highly Optimized 4x3 symmetrical grid) -->
+                <div class="grid grid-cols-4 gap-2.5 bg-slate-100/60 p-3 rounded-2xl border border-slate-200/40">
+                    <!-- Row 1 -->
+                    <button onclick="pressKey('1')" class="aspect-square flex items-center justify-center bg-white hover:bg-slate-50 active:scale-95 text-slate-700 text-2xl font-black rounded-xl shadow-sm border border-slate-200/20 transition-all">1</button>
+                    <button onclick="pressKey('2')" class="aspect-square flex items-center justify-center bg-white hover:bg-slate-50 active:scale-95 text-slate-700 text-2xl font-black rounded-xl shadow-sm border border-slate-200/20 transition-all">2</button>
+                    <button onclick="pressKey('3')" class="aspect-square flex items-center justify-center bg-white hover:bg-slate-50 active:scale-95 text-slate-700 text-2xl font-black rounded-xl shadow-sm border border-slate-200/20 transition-all">3</button>
+                    <button onclick="pressKey('minus')" class="aspect-square flex flex-col items-center justify-center bg-rose-50 hover:bg-rose-100 active:scale-95 text-rose-600 text-xl font-extrabold rounded-xl shadow-sm border border-rose-100 transition-all">
+                        <span class="text-2xl font-black">－</span>
+                        <span class="text-[9px] -mt-1 font-bold">부호</span>
+                    </button>
+                    
+                    <!-- Row 2 -->
+                    <button onclick="pressKey('4')" class="aspect-square flex items-center justify-center bg-white hover:bg-slate-50 active:scale-95 text-slate-700 text-2xl font-black rounded-xl shadow-sm border border-slate-200/20 transition-all">4</button>
+                    <button onclick="pressKey('5')" class="aspect-square flex items-center justify-center bg-white hover:bg-slate-50 active:scale-95 text-slate-700 text-2xl font-black rounded-xl shadow-sm border border-slate-200/20 transition-all">5</button>
+                    <button onclick="pressKey('6')" class="aspect-square flex items-center justify-center bg-white hover:bg-slate-50 active:scale-95 text-slate-700 text-2xl font-black rounded-xl shadow-sm border border-slate-200/20 transition-all">6</button>
+                    <button onclick="pressKey('backspace')" class="aspect-square flex flex-col items-center justify-center bg-amber-50 hover:bg-amber-100 active:scale-95 text-amber-600 text-lg font-black rounded-xl shadow-sm border border-amber-100 transition-all">
+                        <i class="fa-solid fa-delete-left text-xl"></i>
+                        <span class="text-[9px] mt-0.5 font-bold">지우기</span>
+                    </button>
+                    
+                    <!-- Row 3 -->
+                    <button onclick="pressKey('7')" class="aspect-square flex items-center justify-center bg-white hover:bg-slate-50 active:scale-95 text-slate-700 text-2xl font-black rounded-xl shadow-sm border border-slate-200/20 transition-all">7</button>
+                    <button onclick="pressKey('8')" class="aspect-square flex items-center justify-center bg-white hover:bg-slate-50 active:scale-95 text-slate-700 text-2xl font-black rounded-xl shadow-sm border border-slate-200/20 transition-all">8</button>
+                    <button onclick="pressKey('9')" class="aspect-square flex items-center justify-center bg-white hover:bg-slate-50 active:scale-95 text-slate-700 text-2xl font-black rounded-xl shadow-sm border border-slate-200/20 transition-all">9</button>
+                    <button onclick="pressKey('0')" class="aspect-square flex items-center justify-center bg-white hover:bg-slate-50 active:scale-95 text-slate-700 text-2xl font-black rounded-xl shadow-sm border border-slate-200/20 transition-all">0</button>
+                </div>
+
+                <div id="feedback" class="h-6 text-center font-bold text-base transition-all duration-300"></div>
+
+                <button onclick="check()" class="bounce-hover w-full bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white font-extrabold py-4 rounded-2xl shadow-lg text-lg flex items-center justify-center gap-2">
+                    <span>정답 제출하기</span> <i class="fa-solid fa-paper-plane text-sm"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- ================= END SCREEN ================= -->
+        <div id="end-screen" class="hidden text-center space-y-6 py-4">
+            <div class="relative">
+                <div class="text-7xl mb-2 animate-bounce">🏆</div>
+                <h2 class="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-600 fancy-font">
+                    최종 결과를 알려드려요!
+                </h2>
+                <p class="text-slate-400 text-xs mt-1">오늘도 멋진 실력을 보였어요!</p>
+            </div>
+
+            <!-- Score Plate -->
+            <div class="bg-gradient-to-br from-pink-50 to-indigo-50 border-2 border-white rounded-3xl p-6 shadow-inner space-y-3">
+                <div>
+                    <span class="text-xs text-slate-400 font-bold block uppercase tracking-widest">FINAL SCORE</span>
+                    <span id="final-score" class="text-5xl font-black text-pink-500 fancy-font drop-shadow-sm">0</span>
+                    <span class="text-xl text-pink-500 font-bold">점</span>
+                </div>
+                <div class="grid grid-cols-2 gap-2 text-xs text-slate-500 bg-white/80 p-3 rounded-2xl">
+                    <div class="border-r border-slate-100">
+                        <p class="font-semibold text-slate-400">최대 콤보수</p>
+                        <p class="text-base font-extrabold text-amber-500 mt-0.5"><span id="final-maxcombo">0</span>회</p>
+                    </div>
+                    <div>
+                        <p class="font-semibold text-slate-400">학습 매니저 분석</p>
+                        <p class="text-xs font-semibold text-indigo-500 mt-1 cursor-pointer underline" onclick="showReport()">리포트 확인 <i class="fa-solid fa-magnifying-glass-chart"></i></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Saving Status Card -->
+            <div id="save-status-card" class="bg-white/80 border border-slate-100 rounded-2xl p-3.5 flex items-center justify-center gap-3 text-sm text-slate-600">
+                <i class="fa-solid fa-circle-notch animate-spin text-pink-500"></i>
+                <span id="save-status">기록을 실시간 클라우드에 올리고 있어요...</span>
+            </div>
+
+            <div class="space-y-2">
+                <button onclick="goHome()" class="bounce-hover w-full bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white font-extrabold py-3.5 rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-house-chimney text-sm"></i> <span>메인 화면으로 이동하기</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Learning Report -->
+    <div id="report-modal" class="hidden fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-6 max-w-sm w-full space-y-4 border-4 border-pink-100 shadow-2xl">
+            <div class="text-center">
+                <span class="text-4xl">📊</span>
+                <h3 class="text-xl font-extrabold text-slate-800 mt-1">오늘의 학습 취약점 리포트</h3>
+                <p class="text-slate-400 text-xs">어떤 기호에서 실수가 일어났는지 분석합니다.</p>
+            </div>
+            
+            <div class="space-y-2.5">
+                <div class="flex justify-between items-center text-sm p-2 rounded-xl bg-slate-50">
+                    <span class="font-bold text-slate-600">총 푼 문제수</span>
+                    <span id="rep-total" class="font-extrabold text-slate-800">0개</span>
+                </div>
+                <div class="flex justify-between items-center text-sm p-2 rounded-xl bg-green-50">
+                    <span class="font-bold text-green-700">정답</span>
+                    <span id="rep-correct" class="font-extrabold text-green-700">0개</span>
+                </div>
+                <div class="flex justify-between items-center text-sm p-2 rounded-xl bg-rose-50">
+                    <span class="font-bold text-rose-700">오답</span>
+                    <span id="rep-wrong" class="font-extrabold text-rose-700">0개</span>
+                </div>
+                <div class="p-3 bg-indigo-50 rounded-2xl text-xs text-indigo-700 space-y-1">
+                    <p class="font-bold mb-1"><i class="fa-solid fa-wand-magic-sparkles"></i> 마스터님을 위한 맞춤 조언:</p>
+                    <p id="rep-advice" class="leading-relaxed">문제를 더 많이 풀수록 정확한 정수 사칙연산 취약점 진단이 가능해져요!</p>
+                </div>
+            </div>
+
+            <button onclick="closeReport()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 rounded-xl transition-colors">닫기</button>
+        </div>
+    </div>
+
+    <!-- Firebase CDN & Global Architecture Setup -->
+    <script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-analytics.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyCUKNBIo6WfZnEiL3D4zAKl4pdGgCCHKjA",
+    authDomain: "shmath1.firebaseapp.com",
+    projectId: "shmath1",
+    storageBucket: "shmath1.firebasestorage.app",
+    messagingSenderId: "514115223197",
+    appId: "1:514115223197:web:2e2376e11155bb4898de74",
+    measurementId: "G-2XH0KWN4T2"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+</script>
+
+        // 상태 관리
+        let user = null;
+        let state = {
+            mode: '',
+            score: 0,
+            currentAns: 0,
+            timer: 60,
+            interval: null,
+            lives: 5,
+            combo: 0,
+            maxCombo: 0,
+            difficulty: 'easy',
+            operators: ['+', '-'], // 디폴트 덧셈, 뺄셈 활성화
+            // 분석용 통계 데이터
+            totalSolved: 0,
+            correctCount: 0,
+            wrongCount: 0,
+            wrongByOp: { '+': 0, '-': 0, '*': 0, '/': 0 }
+        };
+
+        // 1. Firebase 인증 프로세스 가동 (RULE 3 준수)
+        const initAuth = async () => {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (err) {
+                console.error("Auth Fail", err);
+            }
+        };
+
+        // DOM 이로드 되었을 때 실행할 전역 함수 연결
+        window.onload = async () => {
+            await initAuth();
+        };
+
+        onAuthStateChanged(auth, (currentUser) => {
+            user = currentUser;
+            if (user) {
+                loadLeaderboard();
+            }
+        });
+
+        // 2. 실시간 글로벌 랭킹 로드 (RULE 1, 2 준수: 인덱스가 불필요한 단일 orderBy 구조)
+        window.loadLeaderboard = async () => {
+            const listEl = document.getElementById('ranking-list');
+            if (!user) {
+                listEl.innerHTML = `<div class="text-center text-slate-400 py-6">로그인되지 않았습니다. 잠시만 기다려주세요...</div>`;
+                return;
+            }
+
+            try {
+                // Rule 1: STRICT PATH 사용 (/artifacts/{appId}/public/data/{collectionName})
+                const rankingColRef = collection(db, 'artifacts', appId, 'public', 'data', 'ranking');
+                
+                // Rule 2: No Complex Query (단일 속성 정렬 제한)
+                const q = query(rankingColRef, orderBy('score', 'desc'));
+                const querySnapshot = await getDocs(q);
+                
+                let scores = [];
+                querySnapshot.forEach((doc) => {
+                    scores.push(doc.data());
+                });
+
+                // 상위 5명만 메모리에서 필터링해 안전하게 가져오기
+                const topFive = scores.slice(0, 5);
+
+                if (topFive.length === 0) {
+                    listEl.innerHTML = `
+                        <div class="text-center text-slate-400 py-6">
+                            <p class="font-semibold"><i class="fa-regular fa-folder-open text-lg block mb-1"></i>아직 명예의 전당 주인이 없습니다!</p>
+                            <p class="text-[10px]">첫 번째 랭커에 도전해 봐요.</p>
+                        </div>`;
+                    return;
+                }
+
+                let html = '<table class="w-full text-slate-600 border-collapse">';
+                topFive.forEach((row, index) => {
+                    let badge = '';
+                    if (index === 0) badge = '🥇';
+                    else if (index === 1) badge = '🥈';
+                    else if (index === 2) badge = '🥉';
+                    else badge = `<span class="bg-slate-200 text-slate-600 rounded-full w-5 h-5 inline-flex items-center justify-center font-bold">${index + 1}</span>`;
+
+                    html += `
+                    <tr class="border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors">
+                        <td class="py-2.5 font-bold flex items-center gap-2">${badge} <span class="truncate max-w-[120px] inline-block align-middle">${row.nickname}</span></td>
+                        <td class="py-2.5 text-right font-black text-pink-500 fancy-font">${row.score.toLocaleString()}점</td>
+                    </tr>`;
+                });
+                listEl.innerHTML = html + '</table>';
+
+            } catch (error) {
+                console.error(error);
+                listEl.innerHTML = `<div class="text-center text-rose-400 py-6 text-[10px] font-semibold"><i class="fa-solid fa-triangle-exclamation mr-1"></i> 랭킹을 불러오는데 실패했습니다.</div>`;
+            }
+        };
+
+        // 3. 점수 저장하기 (Firestore)
+        window.saveResultToFirestore = async () => {
+            if (!user) return;
+            const nickname = document.getElementById('nickname').value || '익명 마스터';
+            const statusCard = document.getElementById('save-status-card');
+            const statusText = document.getElementById('save-status');
+
+            try {
+                // Rule 1: STRICT PATH 사용
+                const docId = `${user.uid}_${Date.now()}`;
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'ranking', docId);
+
+                await setDoc(docRef, {
+                    uid: user.uid,
+                    nickname: nickname,
+                    score: state.score,
+                    maxCombo: state.maxCombo,
+                    mode: state.mode,
+                    difficulty: state.difficulty,
+                    createdAt: new Date().toISOString()
+                });
+
+                statusCard.classList.remove('bg-white/80', 'text-slate-600');
+                statusCard.classList.add('bg-green-50', 'text-green-700', 'border-green-200');
+                statusText.innerHTML = `✅ <strong>기록 성공!</strong> 명예의 전당에 실시간 등재 완료.`;
+                loadLeaderboard();
+
+            } catch (err) {
+                console.error(err);
+                statusCard.classList.remove('bg-white/80', 'text-slate-600');
+                statusCard.classList.add('bg-rose-50', 'text-rose-700', 'border-rose-200');
+                statusText.innerHTML = `⚠️ <strong>시트 기록 오류</strong> (익명 세션 에러)`;
+            }
+        };
+
+        // 4. 연산자 선택 토글
+        window.toggleOperator = (op) => {
+            const index = state.operators.indexOf(op);
+            if (index > -1) {
+                // 최소 하나의 연산자는 남아있어야 오류 방지 가능
+                if (state.operators.length === 1) {
+                    showActionMessage('최소한 하나 이상의 연산자를 활성화해야 합니다!', false);
+                    return;
+                }
+                state.operators.splice(index, 1);
+                deactivateOpBtn(op);
+            } else {
+                state.operators.push(op);
+                activateOpBtn(op);
+            }
+        };
+
+        function activateOpBtn(op) {
+            const btn = getOpBtn(op);
+            btn.className = "op-select-btn py-2.5 rounded-xl border-2 border-pink-400 bg-pink-100 text-pink-600 font-extrabold text-lg transition-all";
+        }
+
+        function deactivateOpBtn(op) {
+            const btn = getOpBtn(op);
+            btn.className = "op-select-btn py-2.5 rounded-xl border-2 border-slate-200 bg-white text-slate-500 font-extrabold text-lg transition-all";
+        }
+
+        function getOpBtn(op) {
+            if (op === '+') return document.getElementById('btn-op-add');
+            if (op === '-') return document.getElementById('btn-op-sub');
+            if (op === '*') return document.getElementById('btn-op-mul');
+            if (op === '/') return document.getElementById('btn-op-div');
+        }
+
+        // 5. 난이도 조절 설정
+        window.setDifficulty = (level) => {
+            state.difficulty = level;
+            document.querySelectorAll('.diff-btn').forEach(btn => {
+                btn.className = "diff-btn py-2 rounded-xl border-2 border-slate-200 bg-white text-slate-600 font-bold text-sm transition-all";
+            });
+
+            const activeBtn = document.getElementById(`diff-${level}`);
+            if (level === 'easy') {
+                activeBtn.className = "diff-btn py-2 rounded-xl border-2 border-green-400 bg-green-50 text-green-600 font-bold text-sm transition-all";
+            } else if (level === 'normal') {
+                activeBtn.className = "diff-btn py-2 rounded-xl border-2 border-indigo-400 bg-indigo-50 text-indigo-600 font-bold text-sm transition-all";
+            } else {
+                activeBtn.className = "diff-btn py-2 rounded-xl border-2 border-rose-400 bg-rose-50 text-rose-600 font-bold text-sm transition-all";
+            }
+        };
+
+        // 6. 게임 구동 핵심 비즈니스 로직
+        window.startGame = (mode) => {
+            const nicknameInput = document.getElementById('nickname');
+            const nickname = nicknameInput.value.trim();
+            if(!nickname) {
+                nicknameInput.classList.add('shake-animation');
+                setTimeout(() => nicknameInput.classList.remove('shake-animation'), 500);
+                showActionMessage('✨ 플레이할 닉네임을 입력해주세요!', false);
+                return;
+            }
+
+            state.mode = mode;
+            state.score = 0;
+            state.combo = 0;
+            state.maxCombo = 0;
+            state.lives = 5;
+            state.totalSolved = 0;
+            state.correctCount = 0;
+            state.wrongCount = 0;
+            state.wrongByOp = { '+': 0, '-': 0, '*': 0, '/': 0 };
+
+            document.getElementById('score').innerText = '0';
+            updateComboBadge();
+
+            // 화면 전환
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('quiz-area').classList.remove('hidden');
+
+            if (mode === 'Challenge') {
+                document.getElementById('hearts').classList.remove('hidden');
+                document.getElementById('timer-box').classList.add('hidden');
+                updateHeartsDisplay();
+            } else {
+                state.timer = 60;
+                document.getElementById('hearts').classList.add('hidden');
+                const timerBox = document.getElementById('timer-box');
+                timerBox.classList.remove('hidden');
+                document.getElementById('timer-display').innerText = `60초`;
+
+                state.interval = setInterval(() => {
+                    state.timer--;
+                    document.getElementById('timer-display').innerText = `${state.timer}초`;
+                    if (state.timer <= 0) {
+                        endGame();
+                    }
+                }, 1000);
+            }
+
+            nextQuestion();
+        };
+
+        // 7. 다음 문제 출제
+        let currentSign = '+';
+        window.nextQuestion = () => {
+            let limitVal = 10;
+            if (state.difficulty === 'normal') limitVal = 20;
+            if (state.difficulty === 'hard') limitVal = 50;
+
+            // 랜덤 숫자 생성
+            let a = Math.floor(Math.random() * (limitVal * 2 + 1)) - limitVal;
+            let b = Math.floor(Math.random() * (limitVal * 2 + 1)) - limitVal;
+
+            // 0이 연산에 들어가서 지나치게 쉬워지거나 0 나누기가 발생하는 것 방지
+            if (a === 0) a = 3;
+            if (b === 0) b = 2;
+
+            // 활성화된 연산자 풀에서 선택
+            const ops = state.operators;
+            currentSign = ops[Math.floor(Math.random() * ops.length)];
+
+            let signChar = '+';
+            if (currentSign === '+') {
+                state.currentAns = a + b;
+                signChar = '+';
+            } else if (currentSign === '-') {
+                state.currentAns = a - b;
+                signChar = '-';
+            } else if (currentSign === '*') {
+                // 곱셈일 땐 너무 무섭지 않도록 범위를 살짝 낮춤
+                let smallA = Math.floor(Math.random() * 19) - 9;
+                let smallB = Math.floor(Math.random() * 19) - 9;
+                if (smallA === 0) smallA = 2;
+                if (smallB === 0) smallB = -3;
+                state.currentAns = smallA * smallB;
+                a = smallA;
+                b = smallB;
+                signChar = '×';
+            } else if (currentSign === '/') {
+                // 나눗셈: 나누어떨어지는 식을 생성
+                let smallB = Math.floor(Math.random() * 9) + 2; // 2 ~ 10
+                if (Math.random() > 0.5) smallB = -smallB; // 음수 지원
+                let ans = Math.floor(Math.random() * 11) - 5; // -5 ~ 5 몫
+                if (ans === 0) ans = 1;
+                let mulA = ans * smallB;
+                
+                state.currentAns = ans;
+                a = mulA;
+                b = smallB;
+                signChar = '÷';
+            }
+
+            // 빌보드 텍스트 렌더링
+            document.getElementById('q').innerText = `${formatNum(a)} ${signChar} ${formatNum(b)} = ?`;
+            document.getElementById('ans').value = '';
+        };
+
+        // 괄호와 부호를 완전히 표현해주는 포맷팅 함수 (음수, 양수 모두 괄호 씌움)
+        function formatNum(n) {
+            return n < 0 ? `(${n})` : `(+${n})`;
+        }
+
+        // 8. 가상 키패드 제어 및 물리 키보드 바인딩
+        window.pressKey = (val) => {
+            const input = document.getElementById('ans');
+            if (val === 'backspace') {
+                input.value = input.value.slice(0, -1);
+            } else if (val === 'minus') {
+                if (input.value.startsWith('-')) {
+                    input.value = input.value.substring(1); // 토글 삭제
+                } else {
+                    input.value = '-' + input.value; // 토글 추가
+                }
+            } else {
+                if (input.value.length < 8) {
+                    input.value += val;
+                }
+            }
+        };
+
+        window.clearAnswer = () => {
+            document.getElementById('ans').value = '';
+        };
+
+        // 물리 키보드 바인딩 (PC 이용자 배려)
+        document.addEventListener('keydown', (e) => {
+            // 게임 카드가 켜져있고 퀴즈 영역이 비활성화 되어있지 않을 때만 동작
+            if (document.getElementById('quiz-area').classList.contains('hidden')) return;
+
+            if (e.key >= '0' && e.key <= '9') {
+                pressKey(e.key);
+            } else if (e.key === '-' || e.key === '_') {
+                pressKey('minus');
+            } else if (e.key === 'Backspace') {
+                pressKey('backspace');
+            } else if (e.key === 'Enter') {
+                check();
+            } else if (e.key === 'Escape' || e.key === 'c' || e.key === 'C') {
+                clearAnswer();
+            }
+        });
+
+        // 9. 점수 판정 처리
+        window.check = () => {
+            const ansInput = document.getElementById('ans');
+            const val = ansInput.value;
+            if (val === '') {
+                showActionMessage('정답 입력칸이 비어 있어요!', false);
+                return;
+            }
+
+            const parsedVal = parseInt(val);
+            const isCorrect = parsedVal === state.currentAns;
+            
+            state.totalSolved++;
+
+            if (isCorrect) {
+                state.correctCount++;
+                state.combo++;
+                if (state.combo > state.maxCombo) {
+                    state.maxCombo = state.combo;
+                }
+
+                // 점수 가중치 공식: 기본 100점 + 연속 콤보당 추가 20점 + 난이도 가중치
+                let baseScore = 100;
+                let comboBonus = state.combo * 20;
+                let difficultyWeight = state.difficulty === 'easy' ? 1.0 : state.difficulty === 'normal' ? 1.5 : 2.5;
+                
+                // 이번 턴 획득 점수와 콤보 보너스 분리 계산
+                let addedScore = Math.round((baseScore + comboBonus) * difficultyWeight);
+                let actualComboBonusAmount = Math.round(comboBonus * difficultyWeight);
+
+                state.score += addedScore;
+                document.getElementById('score').innerText = state.score;
+
+                // 정답 메시지에 콤보 보너스 획득 정보를 알기 쉽게 시각화
+                if (state.combo > 1) {
+                    showActionMessage(`🎉 정답! +${addedScore}점 (콤보 보너스 +${actualComboBonusAmount}점 포함! 🔥)`, true);
+                } else {
+                    showActionMessage(`🎉 정답입니다! +${addedScore}점!`, true);
+                }
+
+                // 상큼한 축하 종이가루 뿌리기 (Confetti 효과)
+                confetti({
+                    particleCount: 20,
+                    spread: 40,
+                    origin: { y: 0.8 }
+                });
+
+            } else {
+                state.wrongCount++;
+                state.wrongByOp[currentSign]++;
+                state.combo = 0;
+                
+                showActionMessage(`😢 오답이에요.. 정답은 ${state.currentAns}!`, false);
+
+                // 화면 흔들기 피드백
+                const card = document.getElementById('game-card');
+                card.classList.add('shake-animation');
+                setTimeout(() => card.classList.remove('shake-animation'), 500);
+
+                if (state.mode === 'Challenge') {
+                    state.lives--;
+                    updateHeartsDisplay();
+                    if (state.lives <= 0) {
+                        endGame();
+                        return;
+                    }
+                }
+            }
+
+            updateComboBadge();
+            nextQuestion();
+        };
+
+        function showActionMessage(msg, isSuccess) {
+            const el = document.getElementById('feedback');
+            el.innerText = msg;
+            el.className = isSuccess 
+                ? 'h-6 text-center font-black text-green-500 scale-105 duration-100 transition-all text-sm'
+                : 'h-6 text-center font-black text-rose-500 scale-105 duration-100 transition-all text-sm';
+            
+            setTimeout(() => {
+                if (el.innerText === msg) el.innerText = '';
+            }, 1800);
+        }
+
+        function updateComboBadge() {
+            const badge = document.getElementById('combo-badge');
+            const comboEl = document.getElementById('combo');
+            comboEl.innerText = state.combo;
+
+            if (state.combo > 0) {
+                badge.className = "bg-gradient-to-r from-amber-400 to-orange-500 text-white font-black text-xs px-2.5 py-0.5 rounded-full shadow-sm transition-all duration-300 scale-110 opacity-100";
+            } else {
+                badge.className = "scale-0 opacity-0 bg-gradient-to-r from-amber-400 to-orange-500 text-white font-black text-xs px-2.5 py-0.5 rounded-full shadow-sm transition-all duration-300";
+            }
+        }
+
+        function updateHeartsDisplay() {
+            const heartsEl = document.getElementById('hearts');
+            let heartString = '❤️'.repeat(state.lives) + '🖤'.repeat(5 - state.lives);
+            heartsEl.innerText = heartString;
+        }
+
+        // 10. 게임 종료 처리
+        window.endGame = () => {
+            clearInterval(state.interval);
+            
+            document.getElementById('quiz-area').classList.add('hidden');
+            document.getElementById('end-screen').classList.remove('hidden');
+
+            document.getElementById('final-score').innerText = state.score;
+            document.getElementById('final-maxcombo').innerText = state.maxCombo;
+
+            // 결과 보관함 리프레시
+            document.getElementById('rep-total').innerText = `${state.totalSolved}개`;
+            document.getElementById('rep-correct').innerText = `${state.correctCount}개`;
+            document.getElementById('rep-wrong').innerText = `${state.wrongCount}개`;
+
+            // 분석형 피드백 생성
+            let advice = "오늘의 맞춤 조언: ";
+            if (state.totalSolved === 0) {
+                advice += "문제를 하나도 풀지 않으셨네요! 다음 판에는 한 번 도전해보세요.";
+            } else if (state.wrongCount === 0) {
+                advice += "정말 대단합니다! 오답이 하나도 없네요. 마스터라는 호칭이 아깝지 않습니다. 난이도를 매운맛으로 올려보시는 건 어떨까요?";
+            } else {
+                // 어떤 연산에서 가장 오답이 많았는지 확인
+                let maxWrongOp = '+';
+                let maxCount = 0;
+                for (let op in state.wrongByOp) {
+                    if (state.wrongByOp[op] > maxCount) {
+                        maxCount = state.wrongByOp[op];
+                        maxWrongOp = op;
+                    }
+                }
+
+                let symbolKorean = '';
+                if (maxWrongOp === '+') symbolKorean = '덧셈';
+                if (maxWrongOp === '-') symbolKorean = '뺄셈';
+                if (maxWrongOp === '*') symbolKorean = '곱셈';
+                if (maxWrongOp === '/') symbolKorean = '나눗셈';
+
+                advice += `분석 결과, 현재 [${symbolKorean}] 연산에서 실수가 일어나는 경향이 보여요. 음수 부호 결합과 절대값 결합 계산 규칙을 조금 더 집중해 풀어보세요!`;
+            }
+            document.getElementById('rep-advice').innerText = advice;
+
+            // 피날레 Confetti 쇼
+            let endConfetti = setInterval(() => {
+                confetti({
+                    particleCount: 30,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 }
+                });
+                confetti({
+                    particleCount: 30,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 }
+                });
+            }, 300);
+
+            setTimeout(() => clearInterval(endConfetti), 1200);
+
+            // 데이터 실시간 클라우드 보존
+            saveResultToFirestore();
+        };
+
+        // 11. 게임 초기화 & 메인 화면
+        window.goHome = () => {
+            document.getElementById('end-screen').classList.add('hidden');
+            document.getElementById('start-screen').classList.remove('hidden');
+
+            const statusCard = document.getElementById('save-status-card');
+            statusCard.className = "bg-white/80 border border-slate-100 rounded-2xl p-3.5 flex items-center justify-center gap-3 text-sm text-slate-600";
+            document.getElementById('save-status').innerText = '기록을 실시간 클라우드에 올리고 있어요...';
+
+            loadLeaderboard();
+        };
+
+        // 12. 통계 리포트 모달 토글
+        window.showReport = () => {
+            document.getElementById('report-modal').classList.remove('hidden');
+        };
+        window.closeReport = () => {
+            document.getElementById('report-modal').classList.add('hidden');
+        };
+
+    </script>
+</body>
+</html>
