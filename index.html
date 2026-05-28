@@ -296,24 +296,24 @@
 
     <!-- Firebase CDN & Global Architecture Setup -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-analytics.js";
-
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDocs, collection, query, limit, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Firebase 및 글로벌 환경 변수 초기화
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
-          apiKey: "AIzaSyCUKNBIo6WfZnEiL3D4zAKl4pdGgCCHKjA",
-    authDomain: "shmath1.firebaseapp.com",
-    projectId: "shmath1",
-    storageBucket: "shmath1.firebasestorage.app",
-    messagingSenderId: "514115223197",
-    appId: "1:514115223197:web:2e2376e11155bb4898de74",
-    measurementId: "G-2XH0KWN4T2"
-
+            apiKey: "",
+            authDomain: "math-master-demo.firebaseapp.com",
+            projectId: "math-master-demo",
+            storageBucket: "math-master-demo.appspot.com",
+            messagingSenderId: "1234567890",
+            appId: "1:1234567890:web:mockid"
         };
 
-         const app = initializeApp(firebaseConfig);
-  const analytics = getAnalytics(app);
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'integer-master-v2';
 
         // 상태 관리
         let user = null;
@@ -348,7 +348,7 @@
             }
         };
 
-        // DOM 이로드 되었을 때 실행할 전역 함수 연결
+        // DOM 로드 완료 후 실행
         window.onload = async () => {
             await initAuth();
         };
@@ -360,16 +360,16 @@
             }
         });
 
-        // 2. 실시간 글로벌 랭킹 로드 (RULE 1, 2 준수: 인덱스가 불필요한 단일 orderBy 구조)
+        // 2. 실시간 글로벌 랭킹 로드 (안전한 문자열 변환 방식 적용)
         window.loadLeaderboard = async () => {
             const listEl = document.getElementById('ranking-list');
             if (!user) {
-                listEl.innerHTML = `<div class="text-center text-slate-400 py-6">로그인되지 않았습니다. 잠시만 기다려주세요...</div>`;
+                listEl.innerHTML = '<div class="text-center text-slate-400 py-6">로그인되지 않았습니다. 잠시만 기다려주세요...</div>';
                 return;
             }
 
             try {
-                // Rule 1: STRICT PATH 사용 (/artifacts/{appId}/public/data/{collectionName})
+                // Rule 1: STRICT PATH 사용
                 const rankingColRef = collection(db, 'artifacts', appId, 'public', 'data', 'ranking');
                 
                 // Rule 2: No Complex Query (단일 속성 정렬 제한)
@@ -381,37 +381,36 @@
                     scores.push(doc.data());
                 });
 
-                // 상위 5명만 메모리에서 필터링해 안전하게 가져오기
+                // 상위 5명만 필터링
                 const topFive = scores.slice(0, 5);
 
                 if (topFive.length === 0) {
-                    listEl.innerHTML = `
-                        <div class="text-center text-slate-400 py-6">
-                            <p class="font-semibold"><i class="fa-regular fa-folder-open text-lg block mb-1"></i>아직 명예의 전당 주인이 없습니다!</p>
-                            <p class="text-[10px]">첫 번째 랭커에 도전해 봐요.</p>
-                        </div>`;
+                    listEl.innerHTML = '<div class="text-center text-slate-400 py-6">' +
+                        '<p class="font-semibold"><i class="fa-regular fa-folder-open text-lg block mb-1"></i>아직 명예의 전당 주인이 없습니다!</p>' +
+                        '<p class="text-[10px]">첫 번째 랭커에 도전해 봐요.</p>' +
+                        '</div>';
                     return;
                 }
 
+                // 깨짐 현상을 원천 방지하기 위해 템플릿 문법을 단순 문자열 결합으로 안전하게 재작성
                 let html = '<table class="w-full text-slate-600 border-collapse">';
                 topFive.forEach((row, index) => {
                     let badge = '';
                     if (index === 0) badge = '🥇';
                     else if (index === 1) badge = '🥈';
                     else if (index === 2) badge = '🥉';
-                    else badge = `<span class="bg-slate-200 text-slate-600 rounded-full w-5 h-5 inline-flex items-center justify-center font-bold">${index + 1}</span>`;
+                    else badge = '<span class="bg-slate-200 text-slate-600 rounded-full w-5 h-5 inline-flex items-center justify-center font-bold">' + (index + 1) + '</span>';
 
-                    html += `
-                    <tr class="border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors">
-                        <td class="py-2.5 font-bold flex items-center gap-2">${badge} <span class="truncate max-w-[120px] inline-block align-middle">${row.nickname}</span></td>
-                        <td class="py-2.5 text-right font-black text-pink-500 fancy-font">${row.score.toLocaleString()}점</td>
-                    </tr>`;
+                    html += '<tr class="border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors">' +
+                        '<td class="py-2.5 font-bold flex items-center gap-2">' + badge + ' <span class="truncate max-w-[120px] inline-block align-middle">' + row.nickname + '</span></td>' +
+                        '<td class="py-2.5 text-right font-black text-pink-500 fancy-font">' + row.score.toLocaleString() + '점</td>' +
+                        '</tr>';
                 });
                 listEl.innerHTML = html + '</table>';
 
             } catch (error) {
                 console.error(error);
-                listEl.innerHTML = `<div class="text-center text-rose-400 py-6 text-[10px] font-semibold"><i class="fa-solid fa-triangle-exclamation mr-1"></i> 랭킹을 불러오는데 실패했습니다.</div>`;
+                listEl.innerHTML = '<div class="text-center text-rose-400 py-6 text-[10px] font-semibold"><i class="fa-solid fa-triangle-exclamation mr-1"></i> 랭킹을 불러오는데 실패했습니다.</div>';
             }
         };
 
@@ -424,7 +423,7 @@
 
             try {
                 // Rule 1: STRICT PATH 사용
-                const docId = `${user.uid}_${Date.now()}`;
+                const docId = user.uid + '_' + Date.now();
                 const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'ranking', docId);
 
                 await setDoc(docRef, {
@@ -439,14 +438,14 @@
 
                 statusCard.classList.remove('bg-white/80', 'text-slate-600');
                 statusCard.classList.add('bg-green-50', 'text-green-700', 'border-green-200');
-                statusText.innerHTML = `✅ <strong>기록 성공!</strong> 명예의 전당에 실시간 등재 완료.`;
+                statusText.innerHTML = '✅ <strong>기록 성공!</strong> 명예의 전당에 실시간 등재 완료.';
                 loadLeaderboard();
 
             } catch (err) {
                 console.error(err);
                 statusCard.classList.remove('bg-white/80', 'text-slate-600');
                 statusCard.classList.add('bg-rose-50', 'text-rose-700', 'border-rose-200');
-                statusText.innerHTML = `⚠️ <strong>시트 기록 오류</strong> (익명 세션 에러)`;
+                statusText.innerHTML = '⚠️ <strong>시트 기록 오류</strong> (익명 세션 에러)';
             }
         };
 
@@ -454,7 +453,6 @@
         window.toggleOperator = (op) => {
             const index = state.operators.indexOf(op);
             if (index > -1) {
-                // 최소 하나의 연산자는 남아있어야 오류 방지 가능
                 if (state.operators.length === 1) {
                     showActionMessage('최소한 하나 이상의 연산자를 활성화해야 합니다!', false);
                     return;
@@ -491,7 +489,7 @@
                 btn.className = "diff-btn py-2 rounded-xl border-2 border-slate-200 bg-white text-slate-600 font-bold text-sm transition-all";
             });
 
-            const activeBtn = document.getElementById(`diff-${level}`);
+            const activeBtn = document.getElementById('diff-' + level);
             if (level === 'easy') {
                 activeBtn.className = "diff-btn py-2 rounded-xl border-2 border-green-400 bg-green-50 text-green-600 font-bold text-sm transition-all";
             } else if (level === 'normal') {
@@ -538,11 +536,11 @@
                 document.getElementById('hearts').classList.add('hidden');
                 const timerBox = document.getElementById('timer-box');
                 timerBox.classList.remove('hidden');
-                document.getElementById('timer-display').innerText = `60초`;
+                document.getElementById('timer-display').innerText = '60초';
 
                 state.interval = setInterval(() => {
                     state.timer--;
-                    document.getElementById('timer-display').innerText = `${state.timer}초`;
+                    document.getElementById('timer-display').innerText = state.timer + '초';
                     if (state.timer <= 0) {
                         endGame();
                     }
@@ -563,11 +561,9 @@
             let a = Math.floor(Math.random() * (limitVal * 2 + 1)) - limitVal;
             let b = Math.floor(Math.random() * (limitVal * 2 + 1)) - limitVal;
 
-            // 0이 연산에 들어가서 지나치게 쉬워지거나 0 나누기가 발생하는 것 방지
             if (a === 0) a = 3;
             if (b === 0) b = 2;
 
-            // 활성화된 연산자 풀에서 선택
             const ops = state.operators;
             currentSign = ops[Math.floor(Math.random() * ops.length)];
 
@@ -579,7 +575,6 @@
                 state.currentAns = a - b;
                 signChar = '-';
             } else if (currentSign === '*') {
-                // 곱셈일 땐 너무 무섭지 않도록 범위를 살짝 낮춤
                 let smallA = Math.floor(Math.random() * 19) - 9;
                 let smallB = Math.floor(Math.random() * 19) - 9;
                 if (smallA === 0) smallA = 2;
@@ -589,10 +584,9 @@
                 b = smallB;
                 signChar = '×';
             } else if (currentSign === '/') {
-                // 나눗셈: 나누어떨어지는 식을 생성
                 let smallB = Math.floor(Math.random() * 9) + 2; // 2 ~ 10
-                if (Math.random() > 0.5) smallB = -smallB; // 음수 지원
-                let ans = Math.floor(Math.random() * 11) - 5; // -5 ~ 5 몫
+                if (Math.random() > 0.5) smallB = -smallB;
+                let ans = Math.floor(Math.random() * 11) - 5;
                 if (ans === 0) ans = 1;
                 let mulA = ans * smallB;
                 
@@ -603,25 +597,25 @@
             }
 
             // 빌보드 텍스트 렌더링
-            document.getElementById('q').innerText = `${formatNum(a)} ${signChar} ${formatNum(b)} = ?`;
+            document.getElementById('q').innerText = formatNum(a) + ' ' + signChar + ' ' + formatNum(b) + ' = ?';
             document.getElementById('ans').value = '';
         };
 
-        // 괄호와 부호를 완전히 표현해주는 포맷팅 함수 (음수, 양수 모두 괄호 씌움)
+        // 수식 괄호 포맷팅 함수
         function formatNum(n) {
-            return n < 0 ? `(${n})` : `(+${n})`;
+            return n < 0 ? '(' + n + ')' : '(+' + n + ')';
         }
 
-        // 8. 가상 키패드 제어 및 물리 키보드 바인딩
+        // 8. 가상 키패드 및 물리 키보드 결합
         window.pressKey = (val) => {
             const input = document.getElementById('ans');
             if (val === 'backspace') {
                 input.value = input.value.slice(0, -1);
             } else if (val === 'minus') {
                 if (input.value.startsWith('-')) {
-                    input.value = input.value.substring(1); // 토글 삭제
+                    input.value = input.value.substring(1);
                 } else {
-                    input.value = '-' + input.value; // 토글 추가
+                    input.value = '-' + input.value;
                 }
             } else {
                 if (input.value.length < 8) {
@@ -634,9 +628,7 @@
             document.getElementById('ans').value = '';
         };
 
-        // 물리 키보드 바인딩 (PC 이용자 배려)
         document.addEventListener('keydown', (e) => {
-            // 게임 카드가 켜져있고 퀴즈 영역이 비활성화 되어있지 않을 때만 동작
             if (document.getElementById('quiz-area').classList.contains('hidden')) return;
 
             if (e.key >= '0' && e.key <= '9') {
@@ -652,7 +644,7 @@
             }
         });
 
-        // 9. 점수 판정 처리
+        // 9. 정/오답 판정 및 스코어 가중치 적용
         window.check = () => {
             const ansInput = document.getElementById('ans');
             const val = ansInput.value;
@@ -673,26 +665,22 @@
                     state.maxCombo = state.combo;
                 }
 
-                // 점수 가중치 공식: 기본 100점 + 연속 콤보당 추가 20점 + 난이도 가중치
                 let baseScore = 100;
                 let comboBonus = state.combo * 20;
                 let difficultyWeight = state.difficulty === 'easy' ? 1.0 : state.difficulty === 'normal' ? 1.5 : 2.5;
                 
-                // 이번 턴 획득 점수와 콤보 보너스 분리 계산
                 let addedScore = Math.round((baseScore + comboBonus) * difficultyWeight);
                 let actualComboBonusAmount = Math.round(comboBonus * difficultyWeight);
 
                 state.score += addedScore;
                 document.getElementById('score').innerText = state.score;
 
-                // 정답 메시지에 콤보 보너스 획득 정보를 알기 쉽게 시각화
                 if (state.combo > 1) {
-                    showActionMessage(`🎉 정답! +${addedScore}점 (콤보 보너스 +${actualComboBonusAmount}점 포함! 🔥)`, true);
+                    showActionMessage('🎉 정답! +' + addedScore + '점 (콤보 보너스 +' + actualComboBonusAmount + '점 포함! 🔥)', true);
                 } else {
-                    showActionMessage(`🎉 정답입니다! +${addedScore}점!`, true);
+                    showActionMessage('🎉 정답입니다! +' + addedScore + '점!', true);
                 }
 
-                // 상큼한 축하 종이가루 뿌리기 (Confetti 효과)
                 confetti({
                     particleCount: 20,
                     spread: 40,
@@ -704,9 +692,8 @@
                 state.wrongByOp[currentSign]++;
                 state.combo = 0;
                 
-                showActionMessage(`😢 오답이에요.. 정답은 ${state.currentAns}!`, false);
+                showActionMessage('😢 오답이에요.. 정답은 ' + state.currentAns + '!', false);
 
-                // 화면 흔들기 피드백
                 const card = document.getElementById('game-card');
                 card.classList.add('shake-animation');
                 setTimeout(() => card.classList.remove('shake-animation'), 500);
@@ -755,7 +742,7 @@
             heartsEl.innerText = heartString;
         }
 
-        // 10. 게임 종료 처리
+        // 10. 게임 종료 및 리포팅
         window.endGame = () => {
             clearInterval(state.interval);
             
@@ -765,19 +752,16 @@
             document.getElementById('final-score').innerText = state.score;
             document.getElementById('final-maxcombo').innerText = state.maxCombo;
 
-            // 결과 보관함 리프레시
-            document.getElementById('rep-total').innerText = `${state.totalSolved}개`;
-            document.getElementById('rep-correct').innerText = `${state.correctCount}개`;
-            document.getElementById('rep-wrong').innerText = `${state.wrongCount}개`;
+            document.getElementById('rep-total').innerText = state.totalSolved + '개';
+            document.getElementById('rep-correct').innerText = state.correctCount + '개';
+            document.getElementById('rep-wrong').innerText = state.wrongCount + '개';
 
-            // 분석형 피드백 생성
             let advice = "오늘의 맞춤 조언: ";
             if (state.totalSolved === 0) {
                 advice += "문제를 하나도 풀지 않으셨네요! 다음 판에는 한 번 도전해보세요.";
             } else if (state.wrongCount === 0) {
                 advice += "정말 대단합니다! 오답이 하나도 없네요. 마스터라는 호칭이 아깝지 않습니다. 난이도를 매운맛으로 올려보시는 건 어떨까요?";
             } else {
-                // 어떤 연산에서 가장 오답이 많았는지 확인
                 let maxWrongOp = '+';
                 let maxCount = 0;
                 for (let op in state.wrongByOp) {
@@ -793,11 +777,10 @@
                 if (maxWrongOp === '*') symbolKorean = '곱셈';
                 if (maxWrongOp === '/') symbolKorean = '나눗셈';
 
-                advice += `분석 결과, 현재 [${symbolKorean}] 연산에서 실수가 일어나는 경향이 보여요. 음수 부호 결합과 절대값 결합 계산 규칙을 조금 더 집중해 풀어보세요!`;
+                advice += '분석 결과, 현재 [' + symbolKorean + '] 연산에서 실수가 일어나는 경향이 보여요. 음수 부호 결합과 절대값 결합 계산 규칙을 조금 더 집중해 풀어보세요!';
             }
             document.getElementById('rep-advice').innerText = advice;
 
-            // 피날레 Confetti 쇼
             let endConfetti = setInterval(() => {
                 confetti({
                     particleCount: 30,
@@ -814,12 +797,9 @@
             }, 300);
 
             setTimeout(() => clearInterval(endConfetti), 1200);
-
-            // 데이터 실시간 클라우드 보존
             saveResultToFirestore();
         };
 
-        // 11. 게임 초기화 & 메인 화면
         window.goHome = () => {
             document.getElementById('end-screen').classList.add('hidden');
             document.getElementById('start-screen').classList.remove('hidden');
@@ -831,7 +811,6 @@
             loadLeaderboard();
         };
 
-        // 12. 통계 리포트 모달 토글
         window.showReport = () => {
             document.getElementById('report-modal').classList.remove('hidden');
         };
